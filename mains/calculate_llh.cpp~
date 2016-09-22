@@ -1,6 +1,5 @@
 #include <vector>
 #include <iostream>
-#include <sstream>
 #include <nuSQuIDS/nuSQuIDS.h>
 #include "nusquids_LV.h"
 #include "get_eff_area.h"
@@ -439,10 +438,9 @@ double llh(LLHWorkspace& ws, std::array<double, 3>& osc_params) {
     //============================= end calculating event expectation  =============================//
 
     //============================= begin making histograms  =============================//
-    //--- 1st screen output ---//
-    //if(!quiet){
-    //  std::cout << "Making histograms." << std::endl;
-    //}
+    if(!quiet){
+      std::cout << "Making histograms." << std::endl;
+    }
     // LLH problem and histogram
     // lets construct to weaver histograms
     using namespace phys_tools::histograms;
@@ -502,10 +500,9 @@ double llh(LLHWorkspace& ws, std::array<double, 3>& osc_params) {
 
     //============================= likelihood problem begins  =============================//
     // priors on the nuisance parameters
-    //--- 2nd screen output ---//
-    //if(!quiet){
-    //  std::cout << "Constructing likelihood problem." << std::endl;
-    //s}
+    if(!quiet){
+      std::cout << "Constructing likelihood problem." << std::endl;
+    }
 
     likelihood::UniformPrior positivePrior(0.0,std::numeric_limits<double>::infinity());
     likelihood::GaussianPrior normalizationPrior(1.,0.4);//0.4
@@ -534,10 +531,9 @@ double llh(LLHWorkspace& ws, std::array<double, 3>& osc_params) {
       seed[pf.first]=pf.second;
       fixedIndices.push_back(pf.first);
     }
-    //--- 3rd screen output ---//
-    //if(!quiet){
-    //  std::cout << "Finding minima." << std::endl;
-    //}
+    if(!quiet){
+      std::cout << "Finding minima." << std::endl;
+    }
 
     //std::cout << "evalllh " << std::endl;
     //std::cout << prob.evaluateLikelihood(seed) << std::endl;
@@ -545,13 +541,12 @@ double llh(LLHWorkspace& ws, std::array<double, 3>& osc_params) {
     // minimize over the nuisance parameters
     fitResult fr = doFitLBFGSB(prob,seed,fixedIndices);
 
-    //--- 4th screen output ---//
-    //if(!quiet){
-    //  std::cout << "Fitted Hypothesis: ";
-    //for(unsigned int i=0; i<fr.params.size(); i++)
-    //  std::cout << fr.params[i] << ' ';
-    //std::cout << std::setprecision(10) << fr.likelihood << std::setprecision(6) << ' ' << (fr.succeeded?"succeeded":"failed") << std::endl;
-    //}
+    if(!quiet){
+      std::cout << "Fitted Hypothesis: ";
+    for(unsigned int i=0; i<fr.params.size(); i++)
+      std::cout << fr.params[i] << ' ';
+    std::cout << std::setprecision(10) << fr.likelihood << std::setprecision(6) << ' ' << (fr.succeeded?"succeeded":"failed") << std::endl;
+    }
     return fr.likelihood;//fr.params[2];//
 }
 
@@ -563,8 +558,7 @@ double llh(LLHWorkspace& ws, std::array<double, 3>& osc_params) {
 
 int main(int argc, char** argv)
 {
-    if(not(argc == 8)){
-      //if(not (argc == 7 or argc ==8)){
+    if(not (argc == 7 or argc ==8)){
         std::cout << "Invalid number of arguments. The arguments should be given as follows: \n"
                      "1) Path to the effective area hdf5.\n"
                      "2) Path to the observed events file.\n"
@@ -572,9 +566,8 @@ int main(int argc, char** argv)
                      "4) Path to the kaon component flux.\n"
                      "5) Path to the pion component flux.\n"
                      "6) Path to the prompt component flux.\n"
-	           //"7) [optional] Path to output the event expectations.\n"
-	             "7) Cmumu parameter bin. \n"
-		  << std::endl;
+                     "7) [optional] Path to output the event expectations.\n"
+                     << std::endl;
         exit(1);
     }
 
@@ -590,10 +583,9 @@ int main(int argc, char** argv)
     std::string kaon_filename = std::string(argv[4]);
     std::string pion_filename = std::string(argv[5]);
     std::string prompt_filename = std::string(argv[6]);
-    int par1_bin = std::stoi(argv[7]);
 
     std::string output_file_str;
-    //if(argc==8) output_file_str = std::string(argv[7]);
+    if(argc==8) output_file_str = std::string(argv[7]);
 
     //============================== SETTINGS ===================================//
     //============================== SETTINGS ===================================//
@@ -616,10 +608,9 @@ int main(int argc, char** argv)
     //============================= end read data  =============================//
 
     //============================= begin calculating event expectation  =============================//
-    //--- 5th screen shot ---//
-    //if(!quiet){
-    //  std::cout << "Calculating event expectation using effective area." << std::endl;
-    //}
+    if(!quiet){
+      std::cout << "Calculating event expectation using effective area." << std::endl;
+    }
 
     AreaEdges edges;
     AreaArray areas = get_areas(std::string(effective_area_filename), edges);
@@ -720,21 +711,17 @@ int main(int argc, char** argv)
 
     
     // loop of death
-    std::ostringstream os;
-    os<<"calculate_llh_"<<par1_bin<<".dat";
-    std::ofstream Allh (os.str());Allh.precision(10);
-    //std::ofstream Allh (Form("calculate_llh_%d.dat",par1_bin));Allh.precision(10);
+    std::ofstream Allh ("calculate_llh.dat");Allh.precision(10);
 
     double llh_val[par1_s][par2_s][par3_s] = {0};
-    //for (int i = 0; i < par1; i++) {
-    for (int i = par1_bin; i < par1_bin+1; i++) {
+    for (int i = 0; i < par1; i++) {
       for (int j = 0; j < par2; j++) {
         for (int k = 0; k < par3; k++) {
           osc_params[0] =  std::pow(10, -28 + 6.0*i/((double) par1));
           osc_params[1] =  std::pow(10, -28 + 6.0*j/((double) par2));
           osc_params[2] =  std::pow(10, -28 + 6.0*k/((double) par3));
           llh_val[i][j][k] = llh(llh_ws, osc_params);
-          //std::cout <<i<<" "<<j<<" "<<k<<" "<< llh_val[i][j][k] << std::endl;
+          std::cout <<i<<" "<<j<<" "<<k<<" "<< llh_val[i][j][k] << std::endl;
 	  Allh<<osc_params[0]<<" "<<osc_params[1]<<" "<<osc_params[2]<<" "<< llh_val[i][j][k]<<std::endl;
         }
       }
@@ -749,10 +736,10 @@ int main(int argc, char** argv)
     
 
     //============================= likelihood problem ends =============================//
-    //--- 6th screen shot ---//
-    //if(!quiet){
-    //  std::cout << "Saving expectation." << std::endl;
-    //}
+
+    if(!quiet){
+      //std::cout << "Saving expectation." << std::endl;
+    }
 
     return 0;
 }
